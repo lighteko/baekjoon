@@ -3,52 +3,24 @@ import java.util.*;
 
 class Node {
     int x, y;
-    Node prev;
-    public Node(int x, int y, Node prev) {
+    public Node(int x, int y) {
         this.x = x;
         this.y = y;
-        this.prev = prev;
     }
-    public static List<Node> BFS(int[][] graph, Node RBPos, boolean[][] visited) {
-        Queue<Node> queue = new LinkedList<>();
-        List<Node> paths = new ArrayList<>();
-        queue.offer(RBPos);
-        visited[RBPos.x][RBPos.y] = true;
-        while (!queue.isEmpty()) {
-            Node cursor = queue.poll();
-            if (graph[cursor.x][cursor.y] == 0) {
-                Node subCursor = cursor;
-                while(subCursor != null) {
-                    paths.add(0,subCursor);
-                    subCursor = subCursor.prev;
-                }
-                break;
-            }
-            if (Node.check(cursor.x - 1, cursor.y, graph) && !visited[cursor.x - 1][cursor.y]) {
-                queue.offer(new Node(cursor.x - 1, cursor.y, cursor));
-                visited[cursor.x - 1][cursor.y] = true;
-            }
-            if (Node.check(cursor.x + 1, cursor.y, graph) && !visited[cursor.x + 1][cursor.y]) {
-                queue.offer(new Node(cursor.x + 1, cursor.y, cursor));
-                visited[cursor.x + 1][cursor.y] = true;
-            }
-            if (Node.check(cursor.x, cursor.y - 1, graph) && !visited[cursor.x][cursor.y - 1]) {
-                queue.offer(new Node(cursor.x, cursor.y - 1, cursor));
-                visited[cursor.x][cursor.y - 1] = true;
-            }
-            if (Node.check(cursor.x, cursor.y + 1, graph) && !visited[cursor.x][cursor.y + 1]) {
-                queue.offer(new Node(cursor.x, cursor.y + 1, cursor));
-                visited[cursor.x][cursor.y + 1] = true;
+    public static void BFS(int[][] board, Node red, Node blue) {
+        class State {
+            final Node red, blue;
+            public State(Node red, Node blue) {
+                this.red = red;
+                this.blue = blue;
             }
         }
-        return paths;
-    }
+        Queue<State> queue = new LinkedList<>();
+        Set<State> visited = new HashSet<>();
+        State start = new State(red, blue);
+        queue.offer(start);
+        visited.add(start);
 
-    public static boolean check(int x, int y, int[][] graph) {
-        int n = graph.length;
-        int m = graph[0].length;
-        if (x >= n || x < 0 || y >= m || y < 0) return false;
-        return graph[x][y] == 1 || graph[x][y] == 0;
     }
 
     @Override
@@ -80,104 +52,16 @@ public class P13460 {
                     arr[i][j] = 1;
                 } else if (value.charAt(j) == 'R') {
                     arr[i][j] = 1;
-                    red = new Node(i, j, null);
+                    red = new Node(i, j);
                 } else if (value.charAt(j) == 'B') {
                     arr[i][j] = 1;
-                    blue = new Node(i, j, null);
+                    blue = new Node(i, j);
                 } else {
                     arr[i][j] = 0;
                 }
             }
         }
-        // STEP 2: Search valid paths for red ball using BFS
-        List<Node> paths = Node.BFS(arr, red, visited);
-
-        // STEP 3: Simulate blue ball by the path of red ball
-        // STEP 3-1: Remove redundant paths.
-        for (int i = 1; i + 1 < paths.size(); i++) {
-            Node cursor = paths.get(i - 1);
-            if (cursor.x == paths.get(i).x && cursor.x == paths.get(i + 1).x || cursor.y == paths.get(i).y && cursor.y == paths.get(i + 1).y) {
-                paths.remove(i);
-                i--;
-            }
-        }
-
-        // STEP 3-2: Simulate both red and blue balls.
-        int tilts = 0;
-        for (int i = 1, len = paths.size(); i < len; i++) {
-            int dx = paths.get(i).x - red.x;
-            int dy = paths.get(i).y - red.y;
-            if (dx != 0) {
-                red.x += dx;
-                if (dx > 0) {
-                    while (Node.check(blue.x, blue.y, arr)) {
-                        blue.x++;
-                        if (blue.x == red.x && blue.y == red.y) break;
-                    }
-                    blue.x--;
-                    Node cursor = new Node(blue.x, blue.y, null);
-                    for (int x = 0; x < m && Node.check(cursor.x, cursor.y, arr); x++) {
-                        cursor.x += 1;
-                        if (arr[cursor.x][cursor.y] == 0) break;
-                    }
-                    if (arr[cursor.x][cursor.y] == 0) {
-                        tilts = -1;
-                        break;
-                    }
-                } else {
-                    while (Node.check(blue.x, blue.y, arr)) {
-                        blue.x--;
-                        if (blue.x == red.x && blue.y == red.y) break;
-                    }
-                    blue.x++;
-                    Node cursor = new Node(blue.x, blue.y, null);
-                    for (int x = 0; x < m && Node.check(cursor.x, cursor.y, arr); x++) {
-                        cursor.x -= 1;
-                        if (arr[cursor.x][cursor.y] == 0) break;
-                    }
-                    if (arr[cursor.x][cursor.y] == 0) {
-                        tilts = -1;
-                        break;
-                    }
-                }
-                tilts++;
-            } else if (dy != 0) {
-                red.y += dy;
-                if (dy > 0) {
-                    while (Node.check(blue.x, blue.y, arr)) {
-                        blue.y++;
-                        if (blue.x == red.x && blue.y == red.y) break;
-                    }
-                    blue.y--;
-                    Node cursor = new Node(blue.x, blue.y, null);
-                    for (int x = 0; x < m && Node.check(cursor.x, cursor.y, arr); x++) {
-                        cursor.y += 1;
-                        if (arr[cursor.x][cursor.y] == 0) break;
-                    }
-                    if (arr[cursor.x][cursor.y] == 0) {
-                        tilts = -1;
-                        break;
-                    }
-                } else {
-                    while (Node.check(blue.x, blue.y, arr)) {
-                        blue.y--;
-                        if (blue.x == red.x && blue.y == red.y) break;
-                    }
-                    blue.y++;
-                    Node cursor = new Node(blue.x, blue.y, null);
-                    for (int x = 0; x < m && Node.check(cursor.x, cursor.y, arr); x++) {
-                        cursor.y -= 1;
-                        if (arr[cursor.x][cursor.y] == 0) break;
-                    }
-                    if (arr[cursor.x][cursor.y] == 0) {
-                        tilts = -1;
-                        break;
-                    }
-                }
-                tilts++;
-            }
-        }
-        if (tilts > 10) System.out.println(-1);
-        else System.out.println(tilts);
+        // STEP 2: Search the minimum number of tilts using BFS
+        Node.BFS(arr, red, blue);
     }
 }
